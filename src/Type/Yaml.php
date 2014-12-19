@@ -29,54 +29,29 @@ class Yaml implements TypeInterface
 {
 
     /**
-     * Decode the data into PHP.
+     * Parse the string into a PHP array
      *
-     * @param  string $data
-     * @return mixed
+     * @param  string $string
+     * @param  array  $options
+     * @return array
      */
-    public static function decode($data)
+    public static function unserialize($string, array $options = [])
     {
-        $eol     = (strpos($data, "-\r\n") !== false) ? "-\r\n" : "-\n";
-        $yaml    = substr($data, (strpos($data, $eol) + strlen($eol)));
-        $yamlAry = explode($eol, $yaml);
-
-        $nodes = [];
-        $i = 1;
-
-        foreach ($yamlAry as $value) {
-            $objs = explode("\n", trim($value));
-            $ob = [];
-            foreach ($objs as $v) {
-                $vAry = explode(':', $v);
-                $val  = trim($vAry[1]);
-                $val  = substr($val, 1, -1);
-                $ob[trim($vAry[0])] = stripslashes($val);
-            }
-            $nodes['row_' . $i] = $ob;
-            $i++;
-        }
-
-        return $nodes;
+        $pos = (isset($options['pos'])) ? (int)$options['pos'] : 0;
+        return yaml_parse($string, $pos);
     }
 
     /**
-     * Encode the data into its native format.
+     * Convert the data into its native format
      *
-     * @param  mixed  $data
+     * @param  mixed $data
+     * @param  array $options
      * @return string
      */
-    public static function encode($data)
+    public static function serialize($data, array $options = [])
     {
-        $yaml = "%YAML 1.1\n---\n";
-
-        foreach($data as $key => $ary) {
-            foreach ($ary as $k => $v) {
-                $yaml .= " " . $k . ": \"" . addslashes($v) . "\"\n";
-            }
-            $yaml .= "-\n";
-        }
-
-        return $yaml;
+        $encoding = (isset($options['encoding'])) ? $options['encoding'] : YAML_UTF8_ENCODING;
+        return yaml_emit($data, $encoding);
     }
 
 }

@@ -29,112 +29,115 @@ class Sql implements TypeInterface
 {
 
     /**
-     * Decode the data into PHP.
+     * Parse the string into a PHP array
      *
-     * @param  string $data
-     * @return mixed
+     * @param  string $string
+     * @param  array  $options
+     * @return array
      */
-    public static function decode($data)
+    public static function unserialize($string, array $options = [])
     {
-        $eol = (strpos($data, "),\r\n(") !== false) ? "),\r\n(" : "),\n(";
+        $data      = [];
+        $fieldKeys = [];
+        $curTable  = null;
+        $lines     = preg_split("/((\r?\n)|(\r\n?))/", $string);
 
-        $fields  = substr($data, (strpos($data, '(') + 1));
-        $fields  = substr($fields, 0, strpos($fields, ')'));
-        $search  = [', ', '`', '"', "'", '[', ']'];
-        $replace = [',', '', '', "", '', ''];
-        $fields  = str_replace($search, $replace, $fields);
-
-        $fieldsAry = explode(',', $fields);
-
-        $valuesAry = [];
-        $values = substr($data, (strpos($data, "\n") + 1));
-        $insertAry = explode('INSERT', $values);
-        foreach ($insertAry as $value) {
-            $value = trim($value);
-            if (stripos($value, 'INTO') !== false) {
-                $value = trim(substr($value, (stripos($value, 'VALUES') + 6)));
-            }
-            $valuesAry = array_merge($valuesAry, explode($eol, $value));
-        }
-        $valAry = [];
-
-        foreach ($valuesAry as $value) {
-            if (substr($value, 0, 1) == '(') {
-                $value = substr($value, 1);
-            }
-            if (substr($value, -2) == ');') {
-                $value = substr($value, 0, -2);
-            }
-
-            $valAry[] = $value;
-        }
-
-        $newAry = [];
-        $j = 1;
-
-        foreach ($valAry as $val) {
-            $ary = [];
-
-            for ($i = 0; $i < count($fieldsAry); $i++) {
-                if (substr($val, 0, 1) == "'") {
-                    if (strpos($val, ',') !== false) {
-                        $v = substr($val, 1, strpos($val, "',"));
-                        $l = strlen($v) + 2;
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (!empty($line)) {
+                if (stripos($line, 'INSERT') !== false) {
+                    // Has fields
+                    if (stripos($line, ') VALUES') !== false) {
+                        $table = substr($line, 11);
+                        $table = trim(substr($table, 0, strpos($table, '(')));
+                        $fields = substr($line, (strpos($line, '(') + 1));
+                        $fields = substr($fields, 0, strpos($fields, ')'));
+                        $fields = explode(',', $fields);
+                        foreach ($fields as $key => $value) {
+                            $fields[$key] = self::unquote(trim($value));
+                        }
+                    // Does not have fields
                     } else {
-                        $v = $val;
-                        $l = strlen($v);
+                        $table = substr($string, 11);
+                        $table = trim(substr($table, 0, strpos($table, 'VALUES')));
+                        $fields = null;
                     }
-                } else {
-                    if (strpos($val, ',') !== false) {
-                        $v = substr($val, 0, strpos($val, ","));
-                        $l = strlen($v) + 1;
+                    $curTable = self::unquote($table);
+                    if (!isset($data[$curTable])) {
+                        $data[$curTable] = [];
+                    }
+                    if (!isset($fieldKeys[$curTable])) {
+                        $fieldKeys[$curTable] = $fields;
+                    }
+                } else if ((null !== $curTable) && (substr($line, 0, 1) == '(')) {
+                    $line = substr($line, 1);
+                    $line = substr($line, 0, -2);
+
+                    $values = str_getcsv($line);
+                    foreach ($values as $key => $value) {
+                        $value = trim($value);
+                        if (((substr($value, 0, 1) == '"') && (substr($value, -1) == '"')) || ((substr($value, 0, 1) == "'") && (substr($value, -1) == "'"))) {
+                            $value = substr($value, 1, -1);
+                        }
+                        $values[$key] = stripslashes($value);
+                    }
+
+                    if (isset($fieldKeys[$curTable]) && (null !== $fieldKeys[$curTable]) && (count($fieldKeys[$curTable]) == count($values))) {
+                        $data[$curTable][] = array_combine($fieldKeys[$curTable], $values);
                     } else {
-                        $v = $val;
-                        $l = strlen($v);
+                        $data[$curTable][] = $values;
                     }
                 }
-                if (substr($v, -1) == "'") {
-                    $v = substr($v, 0, -1);
-                }
-                if (substr($v, 0, 1) == "'") {
-                    $v = substr($v, 1);
-                }
-                $ary[$fieldsAry[$i]] = stripslashes($v);
-                $val = substr($val, $l);
-                $val = ltrim($val);
             }
-
-            $newAry['row_' . $j] = $ary;
-            $j++;
         }
 
-        return $newAry;
+        return $data;
     }
 
     /**
-     * Encode the data into its native format.
+     * Convert the data into its native format
      *
-     * @param  mixed  $data
-     * @param  string $table
-     * @param  string $idQuote
-     * @param  int    $divide
+     * @param  mixed $data
+     * @param  array $options
      * @return string
      */
-    public static function encode($data, $table = null, $idQuote = null, $divide = 100)
+    public static function serialize($data, array $options = [])
     {
-        $fields = [];
-        foreach ($data as $ary) {
-            $fields = array_keys((array)$ary);
+        $table  = (isset($options['table']))  ? $options['table']       : 'data';
+        $divide = (isset($options['divide'])) ? (int)$options['divide'] : 100;
+        $quote  = (isset($options['quote']))  ? $options['quote']       : null;
+
+        if ((strpos($quote, '[') !== false) || (strpos($quote, ']') !== false)) {
+            $quote    = '[';
+            $quoteEnd = ']';
+        } else {
+            $quoteEnd = $quote;
         }
 
-        $table = (null === $table) ? 'data' : $table;
-        $idQuoteEnd = ($idQuote == '[') ? ']' : $idQuote;
-        $sql = "INSERT INTO {$idQuote}{$table}{$idQuoteEnd} ({$idQuote}" . implode("{$idQuoteEnd}, {$idQuote}", $fields). "{$idQuoteEnd}) VALUES\n";
+        $table     = self::quote($table, $quote, $quoteEnd);
+        $hasFields = true;
+        $fields    = null;
+        if (is_array($data) && isset($data[0]) && is_array($data[0])) {
+            $fields = array_keys($data[0]);
+            foreach ($fields as $key => $value) {
+                if (is_numeric($value)) {
+                    $hasFields = false;
+                }
+                $fields[$key] = self::quote($value, $quote, $quoteEnd);
+            }
+            if ($hasFields) {
+                $fields = " (" . implode(', ', $fields) . ")";
+            }
+        }
+
+        $sql = "INSERT INTO " . $table . $fields . " VALUES\n";
 
         $i = 1;
         foreach($data as $key => $ary) {
             foreach ($ary as $k => $v) {
-                $ary[$k] = "'" . str_replace("'", "\\'", $v) . "'";
+                if (!is_numeric($v)) {
+                    $ary[$k] = "'" . str_replace("'", "\\'", $v) . "'";
+                }
             }
 
             $sql .= "(" . implode(', ', $ary) . ")";
@@ -142,19 +145,76 @@ class Sql implements TypeInterface
             if (($i % $divide) == 0) {
                 $sql .= ";\n";
                 if ($i < (count($data))) {
-                    $sql .= "INSERT INTO {$idQuote}{$table}{$idQuoteEnd} ({$idQuote}" . implode("{$idQuoteEnd}, {$idQuote}", $fields). "{$idQuoteEnd}) VALUES\n";
+                    $sql .= "INSERT INTO " . $table . $fields . " VALUES\n";
                 }
             } else {
-                if ($i < (count($data))) {
-                    $sql .= ",\n";
-                } else {
-                    $sql .= ";\n";
-                }
+                $sql .= ($i < (count($data))) ? ",\n" : ";\n";
             }
             $i++;
         }
 
         return $sql;
+    }
+
+    /**
+     * Quote the value
+     *
+     * @param  string $value
+     * @param  string $open
+     * @param  string $close
+     * @return string
+     */
+    public static function quote($value, $open = null, $close = null)
+    {
+        if (strpos($value, '.') !== false) {
+            $valueAry = explode('.', $value);
+            foreach ($valueAry as $key => $val) {
+                $valueAry[$key] = $open . $val . $close;
+            }
+            $quotedValue = implode('.', $valueAry);
+        } else {
+            $quotedValue = $open . $value . $close;
+        }
+
+        return $quotedValue;
+    }
+
+    /**
+     * Unquote the value
+     *
+     * @param  string $value
+     * @return string
+     */
+    public static function unquote($value)
+    {
+        $quote    = null;
+        $quoteEnd = null;
+
+        if (substr($value, 0, 1) == '`') {
+            $quote    = '`';
+            $quoteEnd = '`';
+        } else if (substr($value, 0, 1) == '"') {
+            $quote    = '"';
+            $quoteEnd = '"';
+        } else if (substr($value, 0, 1) == "'") {
+            $quote    = "'";
+            $quoteEnd = "'";
+        } else if (substr($value, 0, 1) == "[") {
+            $quote    = '[';
+            $quoteEnd = ']';
+        }
+
+        if (null !== $quote) {
+            $value = str_replace($quoteEnd . '.' . $quote, '.', $value);
+            if (substr($value, 0, 1) == $quote) {
+                $value = substr($value, 1);
+            }
+            if (substr($value, -1) == $quoteEnd) {
+                $value = substr($value, 0, -1);
+            }
+        }
+
+        return $value;
     }
 
 }

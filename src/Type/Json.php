@@ -29,25 +29,30 @@ class Json implements TypeInterface
 {
 
     /**
-     * Decode the data into PHP.
+     * Parse the data into PHP.
      *
-     * @param  string $data
+     * @param  string $string
+     * @param  array  $options
      * @return mixed
      */
-    public static function decode($data)
+    public static function unserialize($string, array $options = [])
     {
-        return json_decode($data);
+        $assoc = (isset($options['assoc'])) ? (bool)$options['assoc'] : true;
+        $depth = (isset($options['depth'])) ? (int)$options['depth']  : 512;
+        return json_decode($string, $assoc, $depth);
     }
 
     /**
-     * Encode the data into its native format.
+     * Convert the data into its native format
      *
-     * @param  mixed  $data
+     * @param  mixed $data
+     * @param  array $options
      * @return string
      */
-    public static function encode($data)
+    public static function serialize($data, array $options = [])
     {
-        return json_encode($data);
+        $options = (isset($options['options'])) ? $options['options']     : JSON_PRETTY_PRINT;
+        return json_encode($data, $options);
     }
 
 }

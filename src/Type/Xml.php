@@ -29,95 +29,91 @@ class Xml implements TypeInterface
 {
 
     /**
-     * Decode the data into PHP.
+     * Parse the string into a PHP array
      *
-     * @param  string  $data
-     * @param  boolean $preserve
-     * @return mixed
+     * @param  string $string
+     * @param  array  $options
+     * @return array
      */
-    public static function decode($data, $preserve = false)
+    public static function unserialize($string, array $options = [])
     {
-        $nodes = [];
+        $matches = [];
+        preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $string, $matches);
 
-        if ($preserve) {
-            $matches = [];
-            preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $data, $matches);
-
-            foreach ($matches[0] as $match) {
-                $strip = str_replace(
-                    ['<![CDATA[', ']]>', '<', '>'],
-                    ['', '', '&lt;', '&gt;'],
-                    $match
-                );
-                $data = str_replace($match, $strip, $data);
-            }
-
-            $nodes = json_decode(json_encode((array) simplexml_load_string($data)), true);
-        } else {
-            $xml = new \SimpleXMLElement($data);
-            $i = 1;
-
-            foreach ($xml as $key => $node) {
-                $objs = [];
-                foreach ($node as $k => $v) {
-                    $j = 1;
-                    if (array_key_exists((string)$k, $objs)) {
-                        while (array_key_exists($k . '_' . $j, $objs)) {
-                            $j++;
-                        }
-                        $newKey = (string)$k . '_' . $j;
-                    } else {
-                        $newKey = (string)$k;
-                    }
-                    $objs[$newKey] = trim((string)$v);
-                }
-                $nodes[$key . '_' . $i] = $objs;
-                $i++;
-            }
+        foreach ($matches[0] as $match) {
+            $strip = str_replace(
+                ['<![CDATA[', ']]>', '<', '>'],
+                ['', '', '&lt;', '&gt;'],
+                $match
+            );
+            $string = str_replace($match, $strip, $string);
         }
 
-        return $nodes;
+        return json_decode(json_encode((array)simplexml_load_string($string)), true);
     }
 
     /**
-     * Encode the data into its native format.
+     * Convert the data into its native format
      *
-     * @param  mixed   $data
-     * @param  string  $table
-     * @param  boolean $pma
+     * @param  mixed $data
+     * @param  array $options
      * @return string
      */
-    public static function encode($data, $table = null, $pma = false)
+    public static function serialize($data, array $options = [])
     {
-        $xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?" . ">\n<data>\n";
+        $root     = (isset($options['root']))     ? $options['root']        : 'data';
+        $node     = (isset($options['node']))     ? $options['node']        : 'row';
+        $encoding = (isset($options['encoding'])) ? $options['encoding']    : 'utf-8';
+        $cdata    = (isset($options['cdata']))    ? (bool)$options['cdata'] : false;
 
-        if ($pma) {
-            foreach($data as $key => $ary) {
-                $table = (null === $table) ? substr($key, 0, strrpos($key, '_')) : $table;
-                $xml .= "    <table name=\"" . $table . "\">\n";
-                foreach ($ary as $k => $v) {
-                    $xml .= "        <column name=\"" . $k . "\">" . $v . "</column>\n";
-                }
-                $xml .= "    </table>\n";
-            }
-        } else {
-            foreach($data as $key => $ary) {
-                $table = (null === $table) ? substr($key, 0, strrpos($key, '_')) : $table;
-                if (empty($table)) {
-                    $table = 'row';
-                }
-                $xml .= "    <" . $table . ">\n";
-                foreach ($ary as $k => $v) {
-                    $xml .= "        <" . $k . ">" . $v . "</" . $k . ">\n";
+        $xml      = new \SimpleXMLElement("<?xml version=\"1.0\" encoding=\"{$encoding}\"?><{$root}></{$root}>", LIBXML_NOENT);
 
+        function toXml($data, $node, $cdata, &$xml) {
+            foreach($data as $key => $value) {
+                if (is_array($value)) {
+                    if (!is_numeric($key)) {
+                        $subNode = $xml->addChild($key);
+                        toXml($value, $node, $cdata, $subNode);
+                    } else {
+                        $subNode = $xml->addChild($node);
+                        toXml($value, $node, $cdata, $subNode);
+                    }
+                } else {
+                    if ((strpos($value, '<') !== false) || (strpos($value, '&') !== false)) {
+                        if ($cdata) {
+                            $xml->addChild($key, '[{pop}]<![CDATA[' . str_replace('&', '&amp;', $value) . ']]>[{/pop}]');
+                        } else {
+                            $xml->addChild($key, htmlentities($value, ENT_QUOTES, 'UTF-8'));
+                        }
+                    } else {
+                        $xml->addChild($key, $value);
+                    }
                 }
-                $xml .= "    </" . $table . ">\n";
             }
         }
 
-        $xml .= "</data>\n";
+        toXml($data, $node, $cdata, $xml);
 
-        return $xml;
+        $dom = new \DOMDocument('1.0');
+        $dom->preserveWhiteSpace = false;
+        $dom->formatOutput       = true;
+        $dom->substituteEntities = false;
+
+        // Clean entities
+        $xmlString = $xml->asXML();
+
+        $matches = [];
+        preg_match_all('/\[\{pop\}\](.+?)\[\{\/pop\}\]/s', $xmlString, $matches);
+        if (isset($matches[0]) && isset($matches[1])) {
+            foreach ($matches[0] as $i => $match) {
+                if (strpos($match, 'CDATA') !== false) {
+                    $xmlString = str_replace([$match, ' & '], [html_entity_decode($matches[1][$i], ENT_QUOTES, 'UTF-8'), ' &amp; '], $xmlString);
+                }
+            }
+        }
+
+        $dom->loadXML($xmlString);
+        return $dom->saveXML();
     }
 
 }

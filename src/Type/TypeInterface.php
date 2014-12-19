@@ -29,19 +29,21 @@ interface TypeInterface
 {
 
     /**
-     * Decode the data into PHP.
+     * Parse the string into a PHP array
      *
-     * @param  string $data
-     * @return mixed
+     * @param  string $string
+     * @param  array  $options
+     * @return array
      */
-    public static function decode($data);
+    public static function unserialize($string, array $options = []);
 
     /**
-     * Encode the data into its native format.
+     * Convert the data into its native format
      *
-     * @param  mixed  $data
+     * @param  mixed $data
+     * @param  array $options
      * @return string
      */
-    public static function encode($data);
+    public static function serialize($data, array $options = []);
 
 }
