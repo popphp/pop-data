@@ -42,7 +42,7 @@ class Yaml implements TypeInterface
     }
 
     /**
-     * Convert the data into its native format
+     * Convert the data into its native string format
      *
      * @param  mixed $data
      * @param  array $options
@@ -52,6 +52,18 @@ class Yaml implements TypeInterface
     {
         $encoding = (isset($options['encoding'])) ? $options['encoding'] : YAML_UTF8_ENCODING;
         return yaml_emit($data, $encoding);
+    }
+
+    /**
+     * Determine if the string is valid YAML
+     *
+     * @param  string $string
+     * @return boolean
+     */
+    public static function isValid($string)
+    {
+        $yaml = @yaml_parse($string);
+        return (($yaml !== false) && is_array($yaml));
     }
 
 }

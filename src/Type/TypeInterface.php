@@ -38,12 +38,21 @@ interface TypeInterface
     public static function unserialize($string, array $options = []);
 
     /**
-     * Convert the data into its native format
+     * Convert the data into its native string format
      *
      * @param  mixed $data
      * @param  array $options
      * @return string
      */
     public static function serialize($data, array $options = []);
+
+
+    /**
+     * Determine if the string is valid for the format
+     *
+     * @param  string $string
+     * @return boolean
+     */
+    public static function isValid($string);
 
 }

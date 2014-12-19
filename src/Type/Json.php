@@ -43,7 +43,7 @@ class Json implements TypeInterface
     }
 
     /**
-     * Convert the data into its native format
+     * Convert the data into its native string format
      *
      * @param  mixed $data
      * @param  array $options
@@ -51,8 +51,20 @@ class Json implements TypeInterface
      */
     public static function serialize($data, array $options = [])
     {
-        $options = (isset($options['options'])) ? $options['options']     : JSON_PRETTY_PRINT;
+        $options = (isset($options['options'])) ? $options['options'] : JSON_PRETTY_PRINT;
         return json_encode($data, $options);
+    }
+
+    /**
+     * Determine if the string is valid JSON
+     *
+     * @param  string $string
+     * @return boolean
+     */
+    public static function isValid($string)
+    {
+        $json = @json_decode($string);
+        return (json_last_error() == JSON_ERROR_NONE);
     }
 
 }

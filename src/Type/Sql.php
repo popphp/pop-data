@@ -95,7 +95,7 @@ class Sql implements TypeInterface
     }
 
     /**
-     * Convert the data into its native format
+     * Convert the data into its native string format
      *
      * @param  mixed $data
      * @param  array $options
@@ -103,7 +103,6 @@ class Sql implements TypeInterface
      */
     public static function serialize($data, array $options = [])
     {
-        $table  = (isset($options['table']))  ? $options['table']       : 'data';
         $divide = (isset($options['divide'])) ? (int)$options['divide'] : 100;
         $quote  = (isset($options['quote']))  ? $options['quote']       : null;
 
@@ -114,43 +113,47 @@ class Sql implements TypeInterface
             $quoteEnd = $quote;
         }
 
-        $table     = self::quote($table, $quote, $quoteEnd);
-        $hasFields = true;
-        $fields    = null;
-        if (is_array($data) && isset($data[0]) && is_array($data[0])) {
-            $fields = array_keys($data[0]);
-            foreach ($fields as $key => $value) {
-                if (is_numeric($value)) {
-                    $hasFields = false;
+        $sql = '';
+
+        foreach ($data as $table => $values) {
+            $table     = self::quote($table, $quote, $quoteEnd);
+            $hasFields = true;
+            $fields    = null;
+            if (is_array($values) && isset($values[0]) && is_array($values[0])) {
+                $fields = array_keys($values[0]);
+                foreach ($fields as $key => $value) {
+                    if (is_numeric($value)) {
+                        $hasFields = false;
+                    }
+                    $fields[$key] = self::quote($value, $quote, $quoteEnd);
                 }
-                $fields[$key] = self::quote($value, $quote, $quoteEnd);
-            }
-            if ($hasFields) {
-                $fields = " (" . implode(', ', $fields) . ")";
-            }
-        }
-
-        $sql = "INSERT INTO " . $table . $fields . " VALUES\n";
-
-        $i = 1;
-        foreach($data as $key => $ary) {
-            foreach ($ary as $k => $v) {
-                if (!is_numeric($v)) {
-                    $ary[$k] = "'" . str_replace("'", "\\'", $v) . "'";
+                if ($hasFields) {
+                    $fields = " (" . implode(', ', $fields) . ")";
                 }
             }
 
-            $sql .= "(" . implode(', ', $ary) . ")";
+            $sql .= "INSERT INTO " . $table . $fields . " VALUES\n";
 
-            if (($i % $divide) == 0) {
-                $sql .= ";\n";
-                if ($i < (count($data))) {
-                    $sql .= "INSERT INTO " . $table . $fields . " VALUES\n";
+            $i = 1;
+            foreach ($values as $key => $ary) {
+                foreach ($ary as $k => $v) {
+                    if (!is_numeric($v)) {
+                        $ary[$k] = "'" . str_replace("'", "\\'", $v) . "'";
+                    }
                 }
-            } else {
-                $sql .= ($i < (count($data))) ? ",\n" : ";\n";
+
+                $sql .= "(" . implode(', ', $ary) . ")";
+
+                if (($i % $divide) == 0) {
+                    $sql .= ";\n";
+                    if ($i < (count($values))) {
+                        $sql .= "INSERT INTO " . $table . $fields . " VALUES\n";
+                    }
+                } else {
+                    $sql .= ($i < (count($values))) ? ",\n" : ";\n\n";
+                }
+                $i++;
             }
-            $i++;
         }
 
         return $sql;
@@ -215,6 +218,17 @@ class Sql implements TypeInterface
         }
 
         return $value;
+    }
+
+    /**
+     * Determine if the string is valid SQL (with INSERT VALUES)
+     *
+     * @param  string $string
+     * @return boolean
+     */
+    public static function isValid($string)
+    {
+        return (stripos($string, 'INSERT INTO') !== false);
     }
 
 }

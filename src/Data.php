@@ -35,65 +35,24 @@ class Data
     protected $type = null;
 
     /**
-     * Data file output stream
-     * @var string
-     */
-    protected $output = null;
-
-    /**
-     * Data stream
-     * @var string
+     * Data in PHP
+     * @var mixed
      */
     protected $data = null;
 
     /**
-     * Data table
+     * Data as string
      * @var string
      */
-    protected $table = null;
-
-    /**
-     * Data identifier quote
-     * @var string
-     */
-    protected $idQuote = null;
-
-    /**
-     * PMA compatible XML flag
-     * @var boolean
-     */
-    protected $pma = false;
-
-    /**
-     * Full path and name of the file, i.e. '/some/dir/file.ext'
-     * @var string
-     */
-    protected $fullpath = null;
-
-    /**
-     * Full basename of file, i.e. 'file.ext'
-     * @var string
-     */
-    protected $basename = null;
-
-    /**
-     * Full filename of file, i.e. 'file'
-     * @var string
-     */
-    protected $filename = null;
-
-    /**
-     * File extension, i.e. 'ext'
-     * @var string
-     */
-    protected $extension = null;
+    protected $string = null;
 
     /**
      * Constructor
      *
      * Instantiate the data object.
      *
-     * @param  string $data
+     * @param  mixed $data
+     * @throws Exception
      * @return Data
      */
     public function __construct($data)
@@ -107,36 +66,26 @@ class Data
              (stripos($data, '.yml') !== false) ||
              (stripos($data, '.yaml') !== false)) && file_exists($data)) {
 
-
-            $fileInfo = pathinfo($data);
-
-            $this->fullpath  = $data;
-            $this->basename  = $fileInfo['basename'];
-            $this->filename  = $fileInfo['filename'];
-            $this->extension = (isset($fileInfo['extension'])) ? $fileInfo['extension'] : null;
-
-            $this->output    = file_get_contents($data);
-            $this->type      = (strtolower($this->extension) == 'yml') ? 'Yaml' : ucfirst(strtolower($this->extension));
+            $fileInfo     = pathinfo($data);
+            $this->type   = (isset($fileInfo['extension'])) ? $fileInfo['extension'] : null;
+            if (null === $this->type) {
+                throw new Exception('Error: The data file type could not be determined.');
+            }
+            $this->type   = (strtolower($this->type) == 'yml') ? 'yaml' : strtolower($this->type);
+            $this->string = file_get_contents($data);
         // Else, if it's just data
+        } else if (!is_string($data)) {
+            $this->data   = $data;
+        // Else if it's a string or stream of data
         } else {
-            $this->data = $data;
+            $this->string = $data;
         }
     }
 
     /**
-     * Get the file stream
+     * Get the data
      *
-     * @return string
-     */
-    public function getOutput()
-    {
-        return $this->output;
-    }
-
-    /**
-     * Get the data stream
-     *
-     * @return string
+     * @return mixed
      */
     public function getData()
     {
@@ -144,169 +93,155 @@ class Data
     }
 
     /**
-     * Get the table name
+     * Get the string
      *
      * @return string
      */
-    public function getTable()
+    public function getString()
     {
-        return $this->table;
+        return $this->string;
     }
 
     /**
-     * Get the ID quote
+     * Set the data
      *
-     * @return string
-     */
-    public function getIdQuote()
-    {
-        return $this->idQuote;
-    }
-
-    /**
-     * Get the PMA flag
-     *
-     * @return boolean
-     */
-    public function getPma()
-    {
-        return $this->pma;
-    }
-
-    /**
-     * Set the table name
-     *
-     * @param  string $table
+     * @param  mixed $data
      * @return Data
      */
-    public function setTable($table)
+    public function setData($data)
     {
-        $this->table = $table;
+        $this->data = $data;
         return $this;
     }
 
     /**
-     * Set the identifier quote
+     * Set the string
      *
-     * @param  string $quote
+     * @param  string $string
      * @return Data
      */
-    public function setIdQuote($quote)
+    public function setString($string)
     {
-        $this->idQuote = $quote;
+        $this->string = $string;
         return $this;
     }
 
     /**
-     * Set the PMA compatible XML flag
-     *
-     * @param  boolean $comp
-     * @return Data
-     */
-    public function setPma($comp)
-    {
-        $this->pma = (boolean)$comp;
-        return $this;
-    }
-
-    /**
-     * Parse the data from the file.
-     *
-     * @return Data
-     */
-    public function parseFile()
-    {
-        $class = 'Pop\\Data\\Type\\' . $this->type;
-        $this->data = $class::decode($this->output);
-        return $this;
-    }
-
-    /**
-     * Parse the data.
+     * Serialize the data to a string
      *
      * @param  string $to
      * @param  array  $options
      * @throws Exception
      * @return Data
      */
-    public function parseData($to, array $options = null)
+    public function serialize($to, array $options = [])
     {
-        $to    = strtolower($to);
-        $types = ['csv', 'html', 'json', 'sql', 'xml', 'yaml'];
+        $this->type = strtolower($to);
+        $types      = ['csv', 'json', 'sql', 'xml', 'yml', 'yaml'];
 
-        if (!in_array($to, $types)) {
+        if (!in_array($this->type, $types)) {
             throw new Exception('That data type is not supported.');
         }
 
-        $class = 'Pop\\Data\\Type\\' . ucfirst($to);
-
-        if ($to == 'sql') {
-            $this->output = $class::encode($this->data, $this->table, $this->idQuote);
-        } else if ($to == 'xml') {
-            $this->output = $class::encode($this->data, $this->table, $this->pma);
-        } else if ($to == 'html') {
-            $this->output = $class::encode($this->data, $options);
-        } else {
-            $this->output = $class::encode($this->data);
+        if ($this->type == 'yml') {
+            $this->type = 'yaml';
         }
 
+        $class        = 'Pop\\Data\\Type\\' . ucfirst($this->type);
+        $this->string = $class::serialize($this->data, $options);
+        return $this;
+    }
+
+    /**
+     * Unserialize the string to data
+     *
+     * @param  array  $options
+     * @throws Exception
+     * @return Data
+     */
+    public function unserialize(array $options = [])
+    {
+        // Attempt to auto-detect data type from the string
+        if (null === $this->type) {
+            if (Type\Json::isValid($this->string)) {
+                $this->type = 'json';
+            } else if (Type\Xml::isValid($this->string)) {
+                $this->type = 'xml';
+            } else if (Type\Sql::isValid($this->string)) {
+                $this->type = 'sql';
+            } else if (Type\Yaml::isValid($this->string)) {
+                $this->type = 'yaml';
+            } else if (Type\Csv::isValid($this->string)) {
+                $this->type = 'csv';
+            }
+        }
+
+        if (null === $this->type) {
+            throw new Exception('Error: Unable to auto-detect the data type.');
+        }
+
+        $class      = 'Pop\\Data\\Type\\' . ucfirst($this->type);
+        $this->data = $class::unserialize($this->string, $options);
         return $this;
     }
 
     /**
      * Output the data file directly.
      *
-     * @param  string $to
-     * @param  boolean $download
-     * @return Data
+     * @param  string  $filename
+     * @param  boolean $forceDownload
+     * @throws Exception
+     * @return string
      */
-    public function output($to, $download = false)
+    public function outputToHttp($filename = null, $forceDownload = true)
     {
-        $fileInfo        = pathinfo($to);
-        $this->fullpath  = $to;
-        $this->basename  = $fileInfo['basename'];
-        $this->filename  = $fileInfo['filename'];
-        $this->extension = (isset($fileInfo['extension'])) ? $fileInfo['extension'] : null;
-
-        // Determine if the force download argument has been passed.
-        $attach = ($download) ? 'attachment; ' : null;
-
-        header('Content-type: text/plain');
-        header('Content-disposition: ' . $attach . 'filename=' . $this->basename);
-
-        if (isset($_SERVER['SERVER_PORT']) && ($_SERVER['SERVER_PORT'] == 443)) {
-            header('Expires: 0');
-            header('Cache-Control: private, must-revalidate');
-            header('Pragma: cache');
+        if ((null === $this->type) || (null === $this->string)) {
+            throw new Exception('Error: The data has not been properly serialized.');
         }
 
-        echo $this->output;
+        $mimeTypes = [
+            'csv'    => 'text/csv',
+            'json'   => 'application/json',
+            'sql'    => 'text/plain',
+            'xml'    => 'application/xml',
+            'yaml'   => 'text/plain'
+        ];
 
-        return $this;
+        $headers = [
+            'Content-type'        => $mimeTypes[$this->type],
+            'Content-disposition' => (($forceDownload) ? 'attachment; ' : null) . 'filename=' . $filename
+        ];
+
+        if (isset($_SERVER['SERVER_PORT']) && ($_SERVER['SERVER_PORT'] == 443)) {
+            $headers['Expires']       = 0;
+            $headers['Cache-Control'] = 'private, must-revalidate';
+            $headers['Pragma']        = 'cache';
+        }
+
+        // Send the headers and output the file
+        if (!headers_sent()) {
+            header('HTTP/1.1 200 OK');
+            foreach ($headers as $name => $value) {
+                header($name . ': ' . $value);
+            }
+        }
+
+        echo $this->string;
     }
 
     /**
      * Save the data file to disk.
      *
      * @param  string $to
-     * @param  boolean $append
-     * @return Data
+     * @throws Exception
+     * @return void
      */
-    public function save($to, $append = false)
+    public function writeToFile($to)
     {
-        $fileInfo        = pathinfo($to);
-        $this->fullpath  = $to;
-        $this->basename  = $fileInfo['basename'];
-        $this->filename  = $fileInfo['filename'];
-        $this->extension = (isset($fileInfo['extension'])) ? $fileInfo['extension'] : null;
-
-        if ($append) {
-            file_put_contents($to, $this->output, FILE_APPEND);
-        } else {
-            file_put_contents($to, $this->output);
+        if (null === $this->string) {
+            throw new Exception('Error: The data has not been properly serialized.');
         }
-
-        return $this;
+        file_put_contents($to, $this->string);
     }
 
 }
