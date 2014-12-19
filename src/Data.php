@@ -207,6 +207,10 @@ class Data
             'yaml'   => 'text/plain'
         ];
 
+        if (null === $filename) {
+            $filename = 'pop-data.' . $this->type;
+        }
+
         $headers = [
             'Content-type'        => $mimeTypes[$this->type],
             'Content-disposition' => (($forceDownload) ? 'attachment; ' : null) . 'filename=' . $filename
