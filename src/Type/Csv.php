@@ -91,7 +91,14 @@ class Csv implements TypeInterface
         $csv       = '';
 
         if (is_array($data) && isset($data[0]) && is_array($data[0]) && ($fields)) {
-            $csv .= implode($delimiter, array_keys($data[0])) . PHP_EOL;
+            $headers    = array_keys($data[0]);
+            $headersAry = [];
+            foreach ($headers as $header) {
+                if (!in_array($header, $omit)) {
+                    $headersAry[] = $header;
+                }
+            }
+            $csv .= implode($delimiter, $headersAry) . PHP_EOL;
         }
 
         // Initialize and clean the field values.
