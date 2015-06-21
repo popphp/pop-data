@@ -1,6 +1,5 @@
 before_script:
     - printf "\n" | pecl install yaml-beta
-    - echo "extension=yaml.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
     - composer self-update
     - composer install
 language: php
