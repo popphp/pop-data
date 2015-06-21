@@ -65,20 +65,14 @@ class Data
              (stripos($data, '.xml') !== false) ||
              (stripos($data, '.yml') !== false) ||
              (stripos($data, '.yaml') !== false)) && file_exists($data)) {
-
-            $fileInfo     = pathinfo($data);
-            $this->type   = (isset($fileInfo['extension'])) ? $fileInfo['extension'] : null;
-            if (null === $this->type) {
-                throw new Exception('Error: The data file type could not be determined.');
-            }
-            $this->type   = (strtolower($this->type) == 'yml') ? 'yaml' : strtolower($this->type);
-            $this->string = file_get_contents($data);
+            $this->setString(file_get_contents($data));
+            $this->autoDetect();
         // Else, if it's just data
         } else if (!is_string($data)) {
-            $this->data   = $data;
+            $this->setData($data);
         // Else if it's a string or stream of data
         } else {
-            $this->string = $data;
+            $this->setString($data);
         }
     }
 
@@ -100,6 +94,16 @@ class Data
     public function getString()
     {
         return $this->string;
+    }
+
+    /**
+     * Get the type
+     *
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
     }
 
     /**
@@ -161,25 +165,6 @@ class Data
      */
     public function unserialize(array $options = [])
     {
-        // Attempt to auto-detect data type from the string
-        if (null === $this->type) {
-            if (Type\Json::isValid($this->string)) {
-                $this->type = 'json';
-            } else if (Type\Xml::isValid($this->string)) {
-                $this->type = 'xml';
-            } else if (Type\Sql::isValid($this->string)) {
-                $this->type = 'sql';
-            } else if (Type\Yaml::isValid($this->string)) {
-                $this->type = 'yaml';
-            } else if (Type\Csv::isValid($this->string)) {
-                $this->type = 'csv';
-            }
-        }
-
-        if (null === $this->type) {
-            throw new Exception('Error: Unable to auto-detect the data type.');
-        }
-
         $class      = 'Pop\\Data\\Type\\' . ucfirst($this->type);
         $this->data = $class::unserialize($this->string, $options);
         return $this;
@@ -246,6 +231,29 @@ class Data
             throw new Exception('Error: The data has not been properly serialized.');
         }
         file_put_contents($to, $this->string);
+    }
+
+    /**
+     * Auto-detect the data type from the string
+     *
+     * @return Data
+     */
+    protected function autoDetect()
+    {
+        // Attempt to auto-detect data type from the string
+        if (Type\Json::isValid($this->string)) {
+            $this->type = 'json';
+        } else if (Type\Xml::isValid($this->string)) {
+            $this->type = 'xml';
+        } else if (Type\Sql::isValid($this->string)) {
+            $this->type = 'sql';
+        } else if (Type\Yaml::isValid($this->string)) {
+            $this->type = 'yaml';
+        } else if (Type\Csv::isValid($this->string)) {
+            $this->type = 'csv';
+        }
+
+        return $this;
     }
 
 }
