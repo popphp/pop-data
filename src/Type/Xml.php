@@ -88,8 +88,9 @@ class Xml implements TypeInterface
             }
         // Else, format normally
         } else {
-            // Function to recursively crawl through the array and create the XML nodes
             /**
+             * Function to recursively crawl through the array and create the XML nodes
+             *
              * @param mixed $data
              * @param mixed $node
              * @param mixed $cdata
