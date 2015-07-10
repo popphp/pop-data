@@ -6,9 +6,9 @@ Pop Data Component
 OVERVIEW
 --------
 Pop Data is a component of the Pop PHP Framework 2. It provides a streamlined way to convert common data types.
-With it you can easily give it some native PHP data and quickly produce a serialized version of that data in a
-common data type, such as CSV, JSON, SQL, XML or YAML. Or, conversely, you can give it some serializes data, an
-it will detect the format and convert it to native PHP data.
+With it, you can easily give it some native PHP data and quickly produce a serialized version of that data in a
+common data type, such as CSV, JSON, SQL, XML or YAML. Or, conversely, you can give it some serialized data, an
+it will auto-detect the format and convert it to native PHP data.
 
 INSTALL
 -------
@@ -94,16 +94,17 @@ The $yamlString variable now contains:
 
 ### Unserialize Data
 
-You can either pass the object a direct string of serialized data or a file containing a string of serialized data. 
+You can either pass the data object a direct string of serialized data or a file containing a string of
+serialized data. It will detect which one it is and parse it accordingly. 
 
-##### CSV
+##### String
 
 ```php
 $csv     = new Pop\Data\Data($csvString);
 $phpData = $csv->unserialize();
 ```
 
-##### XML
+##### File
 
 ```php
 $xml     = new Pop\Data\Data('/path/to/file.xml');
@@ -117,7 +118,7 @@ $csv = new Pop\Data\Data($csvString);
 $xml = $csv->convert('xml');
 ```
 
-### Write Data to File
+### Write to File
 
 ```php
 $phpData = [ ... ];
