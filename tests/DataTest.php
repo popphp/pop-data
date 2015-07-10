@@ -64,6 +64,12 @@ class DataTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('bar', $data->getData()['foo']);
     }
 
+    public function testConvert()
+    {
+        $data = new Data(__DIR__ . '/tmp/data.xml');
+        $this->assertContains('foo', $data->convert('json'));
+    }
+
     public function testWriteToFile()
     {
         $data = new Data([
@@ -87,7 +93,7 @@ class DataTest extends \PHPUnit_Framework_TestCase
     /**
      * @runInSeparateProcess
      */
-    public function testOutputToHttp()
+    public function testOutputToHttp1()
     {
         $data = new Data([
             'foo' => 'bar'
@@ -96,6 +102,23 @@ class DataTest extends \PHPUnit_Framework_TestCase
 
         ob_start();
         $data->outputToHttp('test.json', false);
+        $result = ob_get_clean();
+
+        $this->assertContains('"foo": "bar"', $result);
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testOutputToHttp2()
+    {
+        $data = new Data([
+            'foo' => 'bar'
+        ]);
+        $data->serialize('json');
+
+        ob_start();
+        $data->outputToHttp();
         $result = ob_get_clean();
 
         $this->assertContains('"foo": "bar"', $result);

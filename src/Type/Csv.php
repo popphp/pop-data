@@ -2,9 +2,7 @@
 /**
  * Pop PHP Framework (http://www.popphp.org/)
  *
- * @link       https://github.com/popphp/popphp
- * @category   Pop
- * @package    Pop_Data
+ * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2015 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
@@ -79,6 +77,23 @@ class Csv implements TypeInterface
      */
     public static function serialize($data, array $options = [])
     {
+        $keys    = array_keys($data);
+        $isAssoc = false;
+
+        foreach ($keys as $key) {
+            if (!is_numeric($key)) {
+                $isAssoc = true;
+            }
+        }
+
+        if ($isAssoc) {
+            $newData = [];
+            foreach ($data as $key => $value) {
+                $newData = array_merge($newData, $value);
+            }
+            $data = $newData;
+        }
+
         if (isset($options['omit'])) {
             $omit = (!is_array($options['omit'])) ? [$options['omit']] : $options['omit'];
         } else {

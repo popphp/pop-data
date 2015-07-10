@@ -15,4 +15,23 @@ class CsvTest extends \PHPUnit_Framework_TestCase
         $this->assertContains('testuser1,testuser1@test.com', $string);
     }
 
+    public function testSerializeWithAssociativeArray()
+    {
+
+        $data = [
+            'my_table' => [
+                [
+                    'first_name' => 'Bob',
+                    'last_name'  => 'Smith'
+                ],
+                [
+                    'first_name' => 'Jane',
+                    'last_name'  => 'Smith'
+                ]
+            ]
+        ];
+        $string = Csv::serialize($data);
+        $this->assertContains('Bob,Smith', $string);
+    }
+
 }

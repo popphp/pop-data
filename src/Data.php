@@ -2,9 +2,7 @@
 /**
  * Pop PHP Framework (http://www.popphp.org/)
  *
- * @link       https://github.com/popphp/popphp
- * @category   Pop
- * @package    Pop_Data
+ * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2015 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
@@ -73,6 +71,7 @@ class Data
         // Else if it's a string or stream of data
         } else {
             $this->setString($data);
+            $this->autoDetect();
         }
     }
 
@@ -136,7 +135,7 @@ class Data
      * @param  string $to
      * @param  array  $options
      * @throws Exception
-     * @return Data
+     * @return string
      */
     public function serialize($to, array $options = [])
     {
@@ -153,7 +152,7 @@ class Data
 
         $class        = 'Pop\\Data\\Type\\' . ucfirst($this->type);
         $this->string = $class::serialize($this->data, $options);
-        return $this;
+        return $this->string;
     }
 
     /**
@@ -161,13 +160,28 @@ class Data
      *
      * @param  array  $options
      * @throws Exception
-     * @return Data
+     * @return mixed
      */
     public function unserialize(array $options = [])
     {
         $class      = 'Pop\\Data\\Type\\' . ucfirst($this->type);
         $this->data = $class::unserialize($this->string, $options);
-        return $this;
+        return $this->data;
+    }
+
+    /**
+     * Convert the current string data type to a string of a different data type
+     *
+     * @param  string $to
+     * @param  array  $options
+     * @return string
+     */
+    public function convert($to, array $options = [])
+    {
+        if ((null === $this->data) && (null !== $this->string)) {
+            $this->unserialize();
+        }
+        return $this->serialize($to, $options);
     }
 
     /**

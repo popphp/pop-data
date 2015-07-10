@@ -2,9 +2,7 @@
 /**
  * Pop PHP Framework (http://www.popphp.org/)
  *
- * @link       https://github.com/popphp/popphp
- * @category   Pop
- * @package    Pop_Data
+ * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2015 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
@@ -105,12 +103,26 @@ class Sql implements TypeInterface
     {
         $divide = (isset($options['divide'])) ? (int)$options['divide'] : 100;
         $quote  = (isset($options['quote']))  ? $options['quote']       : null;
+        $table  = (isset($options['table']))  ? $options['table']       : 'data';
 
         if ((strpos($quote, '[') !== false) || (strpos($quote, ']') !== false)) {
             $quote    = '[';
             $quoteEnd = ']';
         } else {
             $quoteEnd = $quote;
+        }
+
+        $keys    = array_keys($data);
+        $isAssoc = false;
+
+        foreach ($keys as $key) {
+            if (!is_numeric($key)) {
+                $isAssoc = true;
+            }
+        }
+
+        if (!$isAssoc) {
+            $data = [$table => $data];
         }
 
         $sql = '';
