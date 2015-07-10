@@ -17,8 +17,8 @@ Install `Pop Data` using Composer.
 
     composer require popphp/pop-data
 
-BASIC USE
----------
+BASIC USAGE
+-----------
 
 ### Serialize Data
 
