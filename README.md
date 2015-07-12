@@ -1,11 +1,11 @@
-Pop Data
+pop-data
 ========
 
 [![Build Status](https://travis-ci.org/popphp/pop-data.svg?branch=master)](https://travis-ci.org/popphp/pop-data)
 
 OVERVIEW
 --------
-Pop Data is a component of the Pop PHP Framework 2. It provides a streamlined way to convert common data types.
+`pop-data` is a component of the Pop PHP Framework 2. It provides a streamlined way to convert common data types.
 With it, you can easily give it some native PHP data and quickly produce a serialized version of that data in a
 common data type, such as CSV, JSON, SQL, XML or YAML. Or, conversely, you can give it some serialized data, an
 it will auto-detect the format and convert it to native PHP data.
@@ -13,7 +13,7 @@ it will auto-detect the format and convert it to native PHP data.
 INSTALL
 -------
 
-Install `Pop Data` using Composer.
+Install `pop-data` using Composer.
 
     composer require popphp/pop-data
 
