@@ -5,10 +5,12 @@ pop-data
 
 OVERVIEW
 --------
-`pop-data` is a component of the Pop PHP Framework 2. It provides a streamlined way to convert common data types.
-With it, you can easily give it some native PHP data and quickly produce a serialized version of that data in a
-common data type, such as CSV, JSON, SQL, XML or YAML. Or, conversely, you can give it some serialized data, an
-it will auto-detect the format and convert it to native PHP data.
+`pop-data` provides a streamlined way to convert common data types. With it, you can easily give it
+some native PHP data and quickly produce a serialized version of that data in a common data type,
+such as CSV, JSON, SQL, XML or YAML. Or, conversely, you can give it some serialized data, an it
+will auto-detect the format and convert it to native PHP data.
+
+`pop-data`is a component of the [Pop PHP Framework](http://www.popphp.org/).
 
 INSTALL
 -------
