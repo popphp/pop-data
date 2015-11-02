@@ -31,7 +31,7 @@ class Xml implements TypeInterface
      *
      * @param  string $string
      * @param  array  $options
-     * @return array
+     * @return mixed
      */
     public static function unserialize($string, array $options = [])
     {
@@ -47,7 +47,14 @@ class Xml implements TypeInterface
             $string = str_replace($match, $strip, $string);
         }
 
-        return json_decode(json_encode((array)simplexml_load_string($string)), true);
+        $xml = (isset($options['options'])) ?
+            simplexml_load_string($string, $options['options']) : simplexml_load_string($string);
+
+        if ((isset($options['xml']) && !($options['xml'])) || !isset($options['xml'])) {
+            $xml = json_decode(json_encode((array)$xml), true);
+        }
+
+        return $xml;
     }
 
     /**
