@@ -31,7 +31,7 @@ class XmlTest extends \PHPUnit_Framework_TestCase
 </data>
 XML;
 
-        $data = Xml::unserialize($xml);
+        $data = Xml::unserialize($xml, ['options' => LIBXML_NOCDATA]);
         $this->assertEquals('Bob', $data['row'][0]['first_name']);
     }
 

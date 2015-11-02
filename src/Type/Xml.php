@@ -35,20 +35,8 @@ class Xml implements TypeInterface
      */
     public static function unserialize($string, array $options = [])
     {
-        $matches = [];
-        preg_match_all('/<!\[cdata\[(.*?)\]\]>/is', $string, $matches);
-
-        foreach ($matches[0] as $match) {
-            $strip = str_replace(
-                ['<![CDATA[', ']]>', '<', '>'],
-                ['', '', '&lt;', '&gt;'],
-                $match
-            );
-            $string = str_replace($match, $strip, $string);
-        }
-
         $xml = (isset($options['options'])) ?
-            simplexml_load_string($string, $options['options']) : simplexml_load_string($string);
+            simplexml_load_string($string, 'SimpleXMLElement', $options['options']) : simplexml_load_string($string);
 
         if ((isset($options['xml']) && !($options['xml'])) || !isset($options['xml'])) {
             $xml = json_decode(json_encode((array)$xml), true);
