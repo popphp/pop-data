@@ -150,7 +150,7 @@ class Sql implements TypeInterface
             foreach ($values as $key => $ary) {
                 foreach ($ary as $k => $v) {
                     if (!is_numeric($v)) {
-                        $ary[$k] = "'" . str_replace("'", "\\'", $v) . "'";
+                        $ary[$k] = "'" . str_replace(["'", "\n", "\r"], ["\\'", " ", " "], $v) . "'";
                     }
                 }
 
@@ -169,6 +169,19 @@ class Sql implements TypeInterface
         }
 
         return $sql;
+    }
+
+    /**
+     * Serialize single row of data
+     *
+     * @param  mixed $data
+     * @param  array $options
+     * @return string
+     */
+    public static function serializeRow($data, array $options = [])
+    {
+        $options['divide'] = 1;
+        return self::serialize([$data], $options);
     }
 
     /**

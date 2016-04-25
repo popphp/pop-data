@@ -106,34 +106,63 @@ class Csv implements TypeInterface
         $csv       = '';
 
         if (is_array($data) && isset($data[0]) && is_array($data[0]) && ($fields)) {
-            $headers    = array_keys($data[0]);
-            $headersAry = [];
-            foreach ($headers as $header) {
-                if (!in_array($header, $omit)) {
-                    $headersAry[] = $header;
-                }
-            }
-            $csv .= implode($delimiter, $headersAry) . PHP_EOL;
+            $csv .= self::getFieldHeaders($data[0], $delimiter, $omit);
         }
 
         // Initialize and clean the field values.
         foreach ($data as $value) {
-            $rowAry = [];
-            foreach ($value as $key => $val) {
-                if (!in_array($key, $omit)) {
-                    if (strpos($val, $delimiter) !== false) {
-                        if (strpos($val, $enclosure) !== false) {
-                            $val = str_replace($enclosure, $escape . $enclosure, $val);
-                        }
-                        $val = $enclosure . $val . $enclosure;
-                    }
-                    $rowAry[] = $val;
-                }
-            }
-            $csv .= implode($delimiter, $rowAry) . "\n";
+            $csv .= self::serializeRow($value, $omit, $delimiter, $enclosure, $escape);
         }
 
         return $csv;
+    }
+
+    /**
+     * Serialize single row of data;
+     *
+     * @param  array $value
+     * @param  array $omit
+     * @param  string $delimiter
+     * @param  string $enclosure
+     * @param  string $escape
+     * @return string
+     */
+    public static function serializeRow(array $value, array $omit = [], $delimiter = ',', $enclosure = '"', $escape = "\\")
+    {
+        $rowAry = [];
+        foreach ($value as $key => $val) {
+            if (!in_array($key, $omit)) {
+                $val = str_replace(["\n", "\r"], [" ", " "], $val);
+                if (strpos($val, $delimiter) !== false) {
+                    if (strpos($val, $enclosure) !== false) {
+                        $val = str_replace($enclosure, $escape . $enclosure, $val);
+                    }
+                    $val = $enclosure . $val . $enclosure;
+                }
+                $rowAry[] = $val;
+            }
+        }
+        return implode($delimiter, $rowAry) . "\n";
+    }
+
+    /**
+     * Get field headers
+     *
+     * @param  mixed  $data
+     * @param  string $delimiter
+     * @param  array  $omit
+     * @return string
+     */
+    public static function getFieldHeaders($data, $delimiter = ',', array $omit = [])
+    {
+        $headers    = array_keys($data);
+        $headersAry = [];
+        foreach ($headers as $header) {
+            if (!in_array($header, $omit)) {
+                $headersAry[] = $header;
+            }
+        }
+        return implode($delimiter, $headersAry) . PHP_EOL;
     }
 
     /**
