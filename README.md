@@ -2,7 +2,7 @@ pop-data
 ========
 
 [![Build Status](https://travis-ci.org/popphp/pop-data.svg?branch=master)](https://travis-ci.org/popphp/pop-data)
-[![Coverage Status](http://www.popphp.org/cc/coverage.php?comp=pop-data)](http://www.popphp.org/cc/pop-data/)
+[![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-data)](http://cc.popphp.org/pop-data/)
 
 OVERVIEW
 --------
@@ -98,7 +98,7 @@ The $yamlString variable now contains:
 ### Unserialize Data
 
 You can either pass the data object a direct string of serialized data or a file containing a string of
-serialized data. It will detect which one it is and parse it accordingly. 
+serialized data. It will detect which one it is and parse it accordingly.
 
 ##### String
 
