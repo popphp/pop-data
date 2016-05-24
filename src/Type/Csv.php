@@ -111,7 +111,7 @@ class Csv implements TypeInterface
 
         // Initialize and clean the field values.
         foreach ($data as $value) {
-            $csv .= self::serializeRow($value, $omit, $delimiter, $enclosure, $escape);
+            $csv .= self::serializeRow((array)$value, $omit, $delimiter, $enclosure, $escape);
         }
 
         return $csv;
