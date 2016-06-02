@@ -105,8 +105,8 @@ class Csv implements TypeInterface
         $fields    = (isset($options['fields']))    ? (bool)$options['fields'] : true;
         $csv       = '';
 
-        if (is_array($data) && isset($data[0]) && is_array($data[0]) && ($fields)) {
-            $csv .= self::getFieldHeaders($data[0], $delimiter, $omit);
+        if (is_array($data) && isset($data[0]) && (is_array($data[0]) || ($data[0] instanceof \ArrayObject)) && ($fields)) {
+            $csv .= self::getFieldHeaders((array)$data[0], $delimiter, $omit);
         }
 
         // Initialize and clean the field values.
