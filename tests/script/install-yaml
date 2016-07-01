@@ -1,7 +1,13 @@
 #!/bin/bash
 
-wget http://pecl.php.net/get/yaml-2.0.0RC8.tgz
-tar zxvf yaml-2.0.0RC8.tgz
-cd "yaml-2.0.0RC8"
-phpize && ./configure && make install && echo "Installed ext/yaml-2.0.0RC8"
-
+if [ "$TRAVIS_PHP_VERSION" == "7.0" ]; then
+    wget http://pecl.php.net/get/yaml-2.0.0RC8.tgz
+    tar zxvf yaml-2.0.0RC8.tgz
+    cd "yaml-2.0.0RC8"
+    phpize && ./configure && make install && echo "Installed ext/yaml-2.0.0RC8"
+else
+    wget http://pecl.php.net/get/yaml-1.2.0.tgz
+    tar zxvf yaml-1.2.0.tgz
+    cd "yaml-1.2.0"
+    phpize && ./configure && make install && echo "Installed ext/yaml-1.2.0"
+fi
