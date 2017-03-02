@@ -1,6 +1,13 @@
 pop-data
 ========
 
+END OF LIFE
+-----------
+The `pop-data` component v2.1.0 is now end-of-life. The CSV sub-component has
+been forked and pushed into its own repository:
+
+* popphp/pop-csv
+
 [![Build Status](https://travis-ci.org/popphp/pop-data.svg?branch=master)](https://travis-ci.org/popphp/pop-data)
 [![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-data)](http://cc.popphp.org/pop-data/)
 
